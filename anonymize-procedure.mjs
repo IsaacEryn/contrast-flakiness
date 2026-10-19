@@ -30,7 +30,7 @@ for (const site of sites) {
   const all = new Set();
   for (const [, r] of recs) {
     if (!r.ok) continue;
-    for (const part of ["firstPass", "final", "dropped"]) for (const n of r.contrast[part]) all.add(key(n.target));
+    for (const part of ["firstPass", "final", "dropped", "keptHidden", "keptSameElement"]) for (const n of r.contrast[part] ?? []) all.add(key(n.target));
     for (const f of r.visTrace ?? []) for (const p of f.passes ?? []) for (const n of p.nodes ?? []) all.add(key(n.target));
     for (const e of r.endState ?? []) all.add(key(e.target));
   }
@@ -46,6 +46,8 @@ for (const site of sites) {
         firstPass: r.contrast.firstPass.map(anonNode),
         final: r.contrast.final.map(anonNode),
         dropped: r.contrast.dropped.map(anonNode),
+        ...(r.contrast.keptHidden ? { keptHidden: r.contrast.keptHidden.map(anonNode) } : {}),
+        ...(r.contrast.keptSameElement ? { keptSameElement: r.contrast.keptSameElement.map(anonNode) } : {}),
       };
       outRec.visTrace = (r.visTrace ?? []).map((fr) => ({
         frameUrl: fr.frameUrl,

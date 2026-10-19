@@ -238,6 +238,10 @@ async function measure(browser, site, cond) {
         firstPass: first,
         final: contrastNodes(trace?.final ?? []),
         dropped: (trace?.dropped ?? []).filter((d) => d.ruleId === "color-contrast").map((d) => contrastNodes([{ id: "color-contrast", nodes: [d.node] }])[0]),
+        // 엔진이 확정 패스 때 화면에서 사라졌다고 보고 유지한 노드(a11ychk 필터 수정 이후 엔진에만 있음)
+        keptHidden: (trace?.keptHidden ?? []).filter((d) => d.ruleId === "color-contrast").map((d) => contrastNodes([{ id: "color-contrast", nodes: [d.node] }])[0]),
+        // 확정 패스가 같은 요소를 다른 선택자로 보고해 유지한 노드(a11ychk cd4d37f 이후)
+        keptSameElement: (trace?.keptSameElement ?? []).filter((d) => d.ruleId === "color-contrast").map((d) => contrastNodes([{ id: "color-contrast", nodes: [d.node] }])[0]),
       },
       visTrace,
       endState,

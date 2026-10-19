@@ -191,8 +191,15 @@ node anonymize-procedure.mjs --in=<원자료 폴더> --out=dataset/procedure-eva
 뺐습니다. 측정 환경은 `dataset/procedure-eval/env.json`에 있습니다(axe-core 4.12.1, Playwright 1.61.1,
 Chromium 149.0.7827.55, a11ychk a8b0c7c).
 
+측정해 보니 2-패스 필터가 뺀 노드 대부분은 렌더링 과도 상태가 아니었습니다. 확정 패스에서 같은
+위치·크기·색으로 다시 보고됐는데, axe가 동적 DOM에서 같은 요소에 다른 선택자 문자열을 만들어 짝을
+못 지은 것입니다. a11ychk는 이후 필터가 선택자 대신 요소 자체를 견주도록 고쳤고(cd4d37f), 같은
+23곳 × 4조건 × 10회를 그 엔진으로 다시 쟀습니다. 그 원자료가 `dataset/procedure-eval-fixed/`입니다
+(920회 로드, 2026-10-20 측정, 형식은 같고 엔진이 유지한 노드를 `keptSameElement`·`keptHidden`에 따로 담음).
+
 ```bash
 node procedure-analysis.mjs --august=dataset --procedure=dataset/procedure-eval   # 두 실험의 분석 표 전부
+node procedure-analysis.mjs --august=dataset --procedure=dataset/procedure-eval --fixed=dataset/procedure-eval-fixed   # 수정 전후 비교 포함
 ```
 
 ## 라이선스
