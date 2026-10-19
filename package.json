@@ -16,10 +16,12 @@
     "label": "node label-assist.mjs",
     "verify": "node verify-labels.mjs",
     "verify-summary": "node verify-summary.mjs",
-    "anonymize": "node anonymize.mjs"
+    "anonymize": "node anonymize.mjs",
+    "build-core": "node build-core.mjs",
+    "procedure-eval": "node procedure-eval.mjs"
   },
   "dependencies": {
-    "axe-core": "^4.12.1",
-    "playwright": "^1.62.0"
+    "axe-core": "4.12.1",
+    "playwright": "1.61.1"
   }
 }

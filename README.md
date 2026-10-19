@@ -1,6 +1,6 @@
 # 명도 대비 오탐 실험 하네스
 
-자동 웹 접근성 검사에서 명도 대비(WCAG 1.4.3 / KWCAG 5.4.1) 판정이 렌더링 조건과
+자동 웹 접근성 검사에서 명도 대비(WCAG 1.4.3 / KWCAG 2.2 5.4.3) 판정이 렌더링 조건과
 반복 측정에 따라 어떻게 달라지는지 측정하는 연구용 하네스입니다.
 
 국내 공개 웹사이트 54곳을 대상으로 한 명도 대비 오탐 실험의 하네스와 익명 데이터셋을
@@ -122,8 +122,12 @@ node check-anonymity.mjs --dir=dataset --mapping=mapping.json
 배경 이미지 위의 텍스트는 axe가 배경색을 확정하지 못해 판정에서 빠질 수 있습니다.
 `label-assist.mjs`는 이런 경우를 "판정 보류"로 분류합니다.
 
-**2-패스 안정성 필터를 적용하지 않습니다.** 이 하네스는 필터 없는 1차 패스만 측정합니다.
-필터가 적용된 프로덕션 동작과는 다르며, 필터의 효과를 측정하려면 별도 조건이 필요합니다.
+**렌더링 조건 실험은 2-패스 안정성 필터를 적용하지 않습니다.** `contrast-falsepos.mjs`는 필터 없는
+1차 패스만 측정합니다. 필터와 애니메이션 종료 대기의 효과는 아래 "측정 절차 평가"에서 따로 잽니다.
+
+**렌더링 조건 실험은 조건 순서를 섞지 않았고 회차별 원자료를 남기지 않았습니다.** 사이트마다
+base → rm → font → rm+font 순으로 연속 측정했고, 요소별 발생률만 저장했습니다. 측정 절차 평가는
+둘 다 고쳤습니다.
 
 **첫 화면만 봅니다.** 로그인 이후 화면이나 하위 페이지는 대상이 아닙니다.
 
@@ -133,11 +137,11 @@ node check-anonymity.mjs --dir=dataset --mapping=mapping.json
 |---|---|
 | `screening-report.md` | 표본 선별 근거 (애니메이션·오파시티 측정) |
 | `results.json` | 사이트 × 조건 × 요소별 발생률 원자료 |
-| `analysis-summary.md` | 조건별 집계 표 (논문 표 1~2) |
+| `analysis-summary.md` | 조건별 위반 수·비결정 위반 집계 |
 | `labeling-report.md` | 조건 간 diff 케이스 체크리스트 |
 | `labeling-assist.md` / `.json` | 안정 상태 1회 측정 기반 라벨 제안 |
 | `label-verify-<host>.json` | 사이트별 반복 검증 결과 |
-| `label-verify-summary.md` | 전 사이트 라벨 확정 집계 (논문 표 3) |
+| `label-verify-summary.md` | 전 사이트 라벨 확정 집계 |
 
 ## 공개 데이터셋 (`dataset/`)
 
@@ -146,7 +150,7 @@ node check-anonymity.mjs --dir=dataset --mapping=mapping.json
 
 ```bash
 node analyze.mjs --in=dataset/results-combined.json
-node verify-summary.mjs --in=dataset   # label-verify-*.json 집계 (논문 표 3)
+node verify-summary.mjs --in=dataset   # label-verify-*.json 집계
 ```
 
 **측정값만 담았습니다.** CSS 선택자·HTML 스니펫·URL 경로는 검색하면 원 사이트를
@@ -154,8 +158,42 @@ node verify-summary.mjs --in=dataset   # label-verify-*.json 집계 (논문 표 
 등장하는지는 비교할 수 있지만, 그 요소가 원 사이트의 어느 부분인지는 알 수 없습니다.
 스크린샷도 화면 자체가 식별 정보라 제외했습니다.
 
-조건별 위반 수, 발생률, 대비값, 라벨 판정은 모두 그대로이므로 논문의 표 1~3은 전부
-재현됩니다. 실명 매핑표는 연구자가 비공개로 보관합니다.
+조건별 위반 수, 발생률, 대비값, 라벨 판정은 모두 그대로입니다. 분석 표는 아래
+`procedure-analysis.mjs`로 이 저장소만으로 다시 계산할 수 있습니다. 실명 매핑표는 연구자가
+비공개로 보관합니다.
+
+## 측정 절차 평가 (2026-10)
+
+렌더링 조건을 바꾸는 대신, 실서비스 검사 엔진([a11ychk](https://github.com/IsaacEryn/a11ychk) `runAxeOnPage`)의
+측정 절차를 평가합니다. 엔진을 그대로 번들해 유한 애니메이션 종료 대기와 2-패스 안정성 필터만 켜고 끕니다.
+
+| 조건 | 종료 대기 | 2-패스 필터 |
+|---|---|---|
+| `P0` | 끔 | 끔 |
+| `P1` | 켬 | 끔 |
+| `P2` | 끔 | 켬 |
+| `P3` | 켬 | 켬 (실서비스) |
+
+렌더링 조건은 실서비스 웹 검사와 같게 고정합니다(웹폰트 허용, 감속 없음, 1280×800, ko-KR,
+이미지·미디어 차단). 조건 순서는 사이트·회차마다 고정 시드로 섞고, 회차마다 원자료를 남기며,
+axe가 돈 바로 그 순간에 위반 요소마다 화면 노출 정보(보이는지, 가려졌는지, 누적 불투명도)를 기록합니다.
+
+```bash
+npm install
+node build-core.mjs --a11ychk=<a11ychk 저장소 경로>     # vendor/a11ychk-runaxe.mjs (a8b0c7c 이후)
+node procedure-eval.mjs --sites=<사이트 JSON> --out=<원자료 폴더> --runs=10
+node procedure-summary.mjs --in=<원자료 폴더>
+node anonymize-procedure.mjs --in=<원자료 폴더> --out=dataset/procedure-eval
+```
+
+공개 데이터 `dataset/procedure-eval/`은 23곳 × 4조건 × 10회(920회 로드, 2026-10-19 측정)의 익명
+원자료입니다. 선택자는 사이트 안에서 고정된 `pe-N`(8월 데이터의 `el-N`과 별개), URL과 HTML 조각은
+뺐습니다. 측정 환경은 `dataset/procedure-eval/env.json`에 있습니다(axe-core 4.12.1, Playwright 1.61.1,
+Chromium 149.0.7827.55, a11ychk a8b0c7c).
+
+```bash
+node procedure-analysis.mjs --august=dataset --procedure=dataset/procedure-eval   # 두 실험의 분석 표 전부
+```
 
 ## 라이선스
 
