@@ -422,15 +422,17 @@ function fixedCompare() {
     const b0 = per(before, s, "P0", fin), b3 = per(before, s, "P3", fin), a0 = per(after, s, "P0", fin), a3 = per(after, s, "P3", fin), a2 = per(after, s, "P2", fin);
     const xs = after.filter((r) => r.site === s && r.cond.stabilityFilter);
     const n = xs.length || 1;
-    // 같은 요소로 유지 = 최종 결과에 남았지만 확정 패스 선택자 목록에 없고 숨김 유지도 아닌 노드
-    // (엔진 cd4d37f의 추적 목록은 선택자로 확정된 노드까지 담아, f0cbfbf에서 고친 의미로 여기서 다시 센다)
-    const rescued = (r) => {
+    // 엔진(13d886f 이후)과 같은 의미로 센다. 같은 요소로 유지 = 확정 패스 선택자 목록에 없지만 같은 요소로 확인된 노드,
+    // 숨김으로 유지 = 확정 패스 선택자 목록에 없고 같은 요소도 아니지만 화면에서 사라져 유지한 노드.
+    // (cd4d37f 추적 목록은 선택자로 확정된 노드까지 담고 두 목록이 겹치므로 여기서 다시 나눈다)
+    const kept = (r) => {
       const p2 = new Set((r.visTrace?.find((v) => v.frameUrl === "main")?.passes?.[1]?.nodes ?? []).map((n) => key(n.target)));
-      const hidden = new Set((r.contrast.keptHidden ?? []).map((n) => key(n.target)));
-      return r.contrast.final.filter((n) => !p2.has(key(n.target)) && !hidden.has(key(n.target))).length;
+      const same = new Set((r.contrast.keptSameElement ?? []).map((n) => key(n.target)).filter((k) => !p2.has(k)));
+      const hidden = (r.contrast.keptHidden ?? []).map((n) => key(n.target)).filter((k) => !p2.has(k) && !same.has(k));
+      return [same.size, hidden.length];
     };
-    const sameEl = xs.reduce((a, r) => a + rescued(r), 0) / n;
-    const hid = xs.reduce((a, r) => a + (r.contrast.keptHidden?.length ?? 0), 0) / n;
+    const sameEl = xs.reduce((a, r) => a + kept(r)[0], 0) / n;
+    const hid = xs.reduce((a, r) => a + kept(r)[1], 0) / n;
     const drop = xs.reduce((a, r) => a + r.contrast.dropped.length, 0) / n;
     diffsBefore.push(b3 - b0); diffsAfter.push(a3 - a0);
     if (b3 !== b0 || a3 !== a0 || sameEl || hid || drop) rows.push([s, f1(b0), f1(b3), f1(a0), f1(a3), f1(a2), f2(sameEl), f2(hid), f2(drop)]);
