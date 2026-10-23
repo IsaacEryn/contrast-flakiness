@@ -426,7 +426,7 @@ function fixedCompare() {
     // 숨김으로 유지 = 확정 패스 선택자 목록에 없고 같은 요소도 아니지만 화면에서 사라져 유지한 노드.
     // (cd4d37f 추적 목록은 선택자로 확정된 노드까지 담고 두 목록이 겹치므로 여기서 다시 나눈다)
     const kept = (r) => {
-      const p2 = new Set((r.visTrace?.find((v) => v.frameUrl === "main")?.passes?.[1]?.nodes ?? []).map((n) => key(n.target)));
+      const p2 = new Set((r.visTrace ?? []).flatMap((v) => v.passes?.[1]?.nodes ?? []).map((n) => key(n.target)));
       const same = new Set((r.contrast.keptSameElement ?? []).map((n) => key(n.target)).filter((k) => !p2.has(k)));
       const hidden = (r.contrast.keptHidden ?? []).map((n) => key(n.target)).filter((k) => !p2.has(k) && !same.has(k));
       return [same.size, hidden.length];

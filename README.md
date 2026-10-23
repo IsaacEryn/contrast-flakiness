@@ -219,6 +219,22 @@ node selector-analysis.mjs --in=dataset/selector-identity
 같은 요소로 짝지어졌는지, 선택자 변화의 종류(같음·순서만·특징 바뀜), 첫 실행 선택자가 두 번째 실행 목록에서 찾아지는지,
 위치 경로가 바뀌었는지만 남기고 선택자 문자열과 URL은 뺐습니다. 측정 환경은 `dataset/selector-identity/env.json`에 있습니다.
 
+## 독립 무작위 표본 (2026-10)
+
+측정 절차 평가에 쓰지 않은 사이트로 같은 측정을 되풀이했습니다. 표본틀은 Tranco 목록(2026-10-22 판)의 상위 .kr 도메인
+1,000개이고, 앞선 실험에 쓴 사이트를 뺀 뒤 고정 시드(20261023)로 섞어 첫 화면이 열리는 순서대로 30곳을 골랐습니다
+(익명 ID `site-R01`~`site-R30`). 엔진 판마다 한 세션씩 P0·P3를 10회 쟀고(수정 전 a8b0c7c, 수정 후 cd4d37f),
+같은 30곳에서 선택자 식별 실험도 10회 돌렸습니다.
+
+```bash
+node procedure-eval.mjs --sites=<사이트 JSON> --out=<원자료 폴더> --runs=10 --conds=P0,P3 --seed=20261023
+node indep-analysis.mjs --before=dataset/indep-before --after=dataset/indep-after
+node selector-analysis.mjs --in=dataset/indep-selector-identity
+```
+
+공개 데이터는 `dataset/indep-before/`, `dataset/indep-after/`(각 600회 로드), `dataset/indep-selector-identity/`(300회 로드)입니다.
+형식은 측정 절차 평가·선택자 식별 실험의 익명본과 같습니다.
+
 ## 라이선스
 
 Apache-2.0. a11ychk 검사 엔진(`packages/core`)과 같은 라이선스입니다.

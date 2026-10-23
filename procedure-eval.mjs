@@ -16,7 +16,7 @@
  *   엔진이 끝난 뒤에 재면 2-패스의 500ms 사이에 캐러셀 슬라이드가 바뀌기 때문이다.
  *
  * 준비: npm install && node build-core.mjs --a11ychk=<a11ychk 경로>   (vendor/a11ychk-runaxe.mjs 생성)
- * 실행: node procedure-eval.mjs --sites=<사이트 JSON> --out=<원자료 폴더> [--runs=10] [--only=site-BN,site-DJ] [--gap=10000]
+ * 실행: node procedure-eval.mjs --sites=<사이트 JSON> --out=<원자료 폴더> [--runs=10] [--only=site-BN,site-DJ] [--conds=P0,P3] [--gap=10000]
  *   사이트 JSON: { "sites": [ { "id": "site-BN", "url": "https://…", "group": "A" }, … ] }
  *   원자료에는 실제 URL과 선택자가 들어가므로 공개 저장소 밖(.private 등)에 둔다.
  */
@@ -38,6 +38,7 @@ const RUNS = Math.max(1, Number(argOf("runs")) || 10);
 const ONLY = argOf("only")?.split(",").map((s) => s.trim()).filter(Boolean);
 const GAP_MS = Math.max(0, Number(argOf("gap")) || 10_000);
 const SEED = Number(argOf("seed")) || 20261019;
+const CONDS = argOf("conds")?.split(",").map((s) => s.trim()).filter(Boolean); // 일부 조건만(예: P0,P3)
 if (!SITES_FILE || !OUT) {
   console.error("사용: node procedure-eval.mjs --sites=<사이트 JSON> --out=<원자료 폴더> [--runs=10] [--only=…] [--gap=10000]");
   process.exit(2);
@@ -274,6 +275,7 @@ async function main() {
     runs: RUNS,
     gapMs: GAP_MS,
     seed: SEED,
+    conds: CONDS ?? CONDITIONS.map((c) => c.key),
   };
   // 이어서 실행하면 처음 시작 시각을 지킨다
   const envPath = path.join(OUT, "env.json");
@@ -281,7 +283,7 @@ async function main() {
   fs.writeFileSync(envPath, JSON.stringify({ ...env, startedAt: firstStart, sites: sites.map((s) => s.id) }, null, 2));
 
   const byId = new Map(sites.map((s) => [s.id, s]));
-  const tasks = schedule(sites.map((s) => s.id), RUNS, SEED);
+  const tasks = schedule(sites.map((s) => s.id), RUNS, SEED).filter((x) => !CONDS || CONDS.includes(x.cond.key));
   const lastLoad = new Map();
   let done = 0;
   for (const task of tasks) {
