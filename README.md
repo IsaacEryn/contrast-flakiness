@@ -202,6 +202,23 @@ node procedure-analysis.mjs --august=dataset --procedure=dataset/procedure-eval 
 node procedure-analysis.mjs --august=dataset --procedure=dataset/procedure-eval --fixed=dataset/procedure-eval-fixed   # 수정 전후 비교 포함
 ```
 
+## 선택자 식별 실험 (2026-10)
+
+측정 절차 평가와 같은 23곳, 같은 렌더링 조건(웹폰트 허용, 감속 없음, 1280×800, 이미지·미디어 차단, 유한 애니메이션 종료 대기)에서
+검사 엔진 래퍼 없이 axe-core만 주입해 기본 WCAG 2 A·AA 규칙 전체를 한 로드 안에서 500ms 간격으로 두 번 실행합니다.
+두 실행 모두 `elementRef`·`ancestry`를 켜고, 첫 실행의 위반 요소를 페이지 안 `WeakMap`에 등록해 두 번째 실행의 요소와
+실제 요소로 짝짓습니다. 같은 요소인데 기본 선택자나 위치 경로(`ancestry`)가 달라졌는지를 규칙별·사이트별로 셉니다.
+
+```bash
+node selector-identity.mjs --sites=<사이트 JSON> --out=<원자료 폴더> --runs=10
+node anonymize-selector.mjs --in=<원자료 폴더> --out=dataset/selector-identity
+node selector-analysis.mjs --in=dataset/selector-identity
+```
+
+공개 데이터 `dataset/selector-identity/`는 23곳 × 10회(230회 로드, 2026-10-23 측정)의 익명 원자료입니다. 노드마다 규칙,
+같은 요소로 짝지어졌는지, 선택자 변화의 종류(같음·순서만·특징 바뀜), 첫 실행 선택자가 두 번째 실행 목록에서 찾아지는지,
+위치 경로가 바뀌었는지만 남기고 선택자 문자열과 URL은 뺐습니다. 측정 환경은 `dataset/selector-identity/env.json`에 있습니다.
+
 ## 라이선스
 
 Apache-2.0. a11ychk 검사 엔진(`packages/core`)과 같은 라이선스입니다.
